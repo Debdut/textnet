@@ -11,7 +11,7 @@ func Machine(prevState State, action Action) (State, error) {
 	if action.Type == "Site: Send" {
 
 		// fetch site text, compute max pages
-		URL := action.Payload.Query
+		URL := action.Payload.(*SiteSendPayload).Query
 		Site, err := fetch.GetSite(URL)
 		if err != nil {
 			return prevState, err
@@ -36,7 +36,7 @@ func Machine(prevState State, action Action) (State, error) {
 	if action.Type == "Search: Send" {
 
 		// fetch search results
-		Query := action.Payload.Query
+		Query := action.Payload.(*SearchSendPayload).Query
 		var Page uint8 = 1
 		Links := fetch.GetSearchLinks(Query, Page)
 
@@ -125,7 +125,7 @@ func Machine(prevState State, action Action) (State, error) {
 		searchState := prevState.State.(*SearchState)
 		Query := searchState.Query
 		Page := searchState.Page
-		// Links := searchState.Links
+		Links := searchState.Links
 
 		if action.Type == "Search: Next" {
 
@@ -168,15 +168,30 @@ func Machine(prevState State, action Action) (State, error) {
 		if action.Type == "Search: Choose" {
 
 			// TODO
+			Query := action.Payload.(*SearchChoosePayload).Query
+			if Query > 10 {
+				return prevState, errors.New("SEARCH:OUT_OF_BOUND")
+			}
+
+			index := 10*(Page-1) + Query - 1
+			URL := Links[index].URL
+			Site, err := fetch.GetSite(URL)
+			if err != nil {
+				return prevState, err
+			}
+
+			MaxPage := util.GetSiteMaxPages(Site.FullText)
+			var Page uint8 = 1
+			Text := util.GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
 				State: &SiteState{
-					URL:     "",
-					Page:    1,
-					MaxPage: 1,
-					Text:    "",
-					Site:    fetch.Site{},
+					URL:     URL,
+					Page:    Page,
+					MaxPage: MaxPage,
+					Text:    Text,
+					Site:    Site,
 				},
 			}, nil
 		}
