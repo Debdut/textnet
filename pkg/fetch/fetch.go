@@ -24,7 +24,7 @@ func Get(url string) (string, error) {
 }
 
 // TODO
-func GetText(url string) string {
+func GetText(html string) string {
 	return ""
 }
 
@@ -34,8 +34,36 @@ type Link struct {
 }
 
 // TODO
-func GetLinks(url string) []Link {
+func GetLinks(html string) []Link {
 	return []Link{}
+}
+
+// TODO
+func GetImages(html string) []Link {
+	return []Link{}
+}
+
+type Site struct {
+	URL      string
+	FullText string
+	Links    []Link
+	Images   []Link
+}
+
+// TODO
+func GetSite(url string) (Site, error) {
+	var site Site
+
+	html, err := Get(url)
+	if err != nil {
+		return site, err
+	}
+
+	site.FullText = GetText(html)
+	site.Links = GetLinks(html)
+	site.Images = GetImages(html)
+
+	return site, nil
 }
 
 // TODO

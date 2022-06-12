@@ -18,11 +18,11 @@ func (state *NullState) GetState() string {
 }
 
 type SiteState struct {
-	URL      string
-	Page     uint8
-	MaxPage  uint8
-	FullText string
-	Text     string
+	URL     string
+	Page    uint8
+	MaxPage uint8
+	Text    string
+	Site    fetch.Site
 }
 
 func (state *SiteState) GetState() string {

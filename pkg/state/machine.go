@@ -1,30 +1,36 @@
 package state
 
 import (
+	"errors"
+
 	"github.com/debdut/textnet/pkg/fetch"
 	"github.com/debdut/textnet/pkg/util"
 )
 
-func Machine(state State, action Action) State {
+func Machine(prevState State, action Action) (State, error) {
 	if action.Type == "Site: Send" {
 
 		// fetch site text, compute max pages
 		URL := action.Payload.Query
-		FullText := fetch.GetText(URL)
-		MaxPage := util.GetSiteMaxPages(FullText)
+		Site, err := fetch.GetSite(URL)
+		if err != nil {
+			return prevState, err
+		}
+
+		MaxPage := util.GetSiteMaxPages(Site.FullText)
 		var Page uint8 = 1
-		Text := util.GetSitePage(FullText, Page)
+		Text := util.GetSitePage(Site.FullText, Page)
 
 		return State{
 			Type: "Site",
 			State: &SiteState{
-				URL:      URL,
-				Page:     Page,
-				MaxPage:  MaxPage,
-				Text:     Text,
-				FullText: FullText,
+				URL:     URL,
+				Page:    Page,
+				MaxPage: MaxPage,
+				Text:    Text,
+				Site:    Site,
 			},
-		}
+		}, nil
 	}
 
 	if action.Type == "Search: Send" {
@@ -41,34 +47,37 @@ func Machine(state State, action Action) State {
 				Links: Links,
 				Page:  Page,
 			},
-		}
+		}, nil
 	}
 
-	if state.Type == "Site" {
-		prevState := state.State.(*SiteState)
-		URL := prevState.URL
-		MaxPage := prevState.MaxPage
-		FullText := prevState.FullText
-		Page := prevState.Page
+	if prevState.Type == "Site" {
+		siteState := prevState.State.(*SiteState)
+		URL := siteState.URL
+		MaxPage := siteState.MaxPage
+		Site := siteState.Site
+		Page := siteState.Page
 
 		if action.Type == "Site: Next" {
 
 			// get next page (part of text) of the site
 			if MaxPage > Page {
 				Page += 1
+			} else {
+				return prevState, errors.New("SITE:END")
 			}
-			Text := util.GetSitePage(FullText, Page)
+
+			Text := util.GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
 				State: &SiteState{
-					URL:      URL,
-					Page:     Page,
-					MaxPage:  MaxPage,
-					Text:     Text,
-					FullText: FullText,
+					URL:     URL,
+					Page:    Page,
+					MaxPage: MaxPage,
+					Text:    Text,
+					Site:    Site,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Site: Prev" {
@@ -76,25 +85,28 @@ func Machine(state State, action Action) State {
 			// get prev page (part of text) of the site
 			if Page > 1 {
 				Page -= 1
+			} else {
+				return prevState, errors.New("SITE:START")
 			}
-			Text := util.GetSitePage(FullText, Page)
+
+			Text := util.GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
 				State: &SiteState{
-					URL:      URL,
-					Page:     Page,
-					MaxPage:  MaxPage,
-					Text:     Text,
-					FullText: FullText,
+					URL:     URL,
+					Page:    Page,
+					MaxPage: MaxPage,
+					Text:    Text,
+					Site:    Site,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Link" {
 
 			// get all links from page
-			Links := fetch.GetLinks(URL)
+			Links := Site.Links
 			MaxPage := util.GetLinkMaxPages(Links)
 
 			return State{
@@ -105,37 +117,52 @@ func Machine(state State, action Action) State {
 					Page:    1,
 					MaxPage: MaxPage,
 				},
-			}
+			}, nil
 		}
 	}
 
-	if state.Type == "Search" {
+	if prevState.Type == "Search" {
+		searchState := prevState.State.(*SearchState)
+		Query := searchState.Query
+		Page := searchState.Page
+		// Links := searchState.Links
+
 		if action.Type == "Search: Next" {
 
-			// TODO
+			// fetch search results
+			Page += 1
+			Links := fetch.GetSearchLinks(Query, Page)
+			if len(Links) == 0 {
+				return prevState, errors.New("SEARCH:END")
+			}
 
 			return State{
 				Type: "Search",
 				State: &SearchState{
-					Query: state.State.(*SearchState).Query,
-					Links: []fetch.Link{},
-					Page:  state.State.(*SearchState).Page + 1,
+					Query: Query,
+					Links: Links,
+					Page:  Page,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Search: Prev" {
 
 			// TODO
+			if Page == 1 {
+				return prevState, errors.New("SEARCH:START")
+			}
+			Page -= 1
+			Links := fetch.GetSearchLinks(Query, Page)
 
 			return State{
 				Type: "Search",
 				State: &SearchState{
-					Query: state.State.(*SearchState).Query,
-					Links: []fetch.Link{},
-					Page:  state.State.(*SearchState).Page - 1,
+					Query: Query,
+					Links: Links,
+					Page:  Page,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Search: Choose" {
@@ -145,17 +172,17 @@ func Machine(state State, action Action) State {
 			return State{
 				Type: "Site",
 				State: &SiteState{
-					URL:      "",
-					Page:     1,
-					MaxPage:  1,
-					Text:     "",
-					FullText: "",
+					URL:     "",
+					Page:    1,
+					MaxPage: 1,
+					Text:    "",
+					Site:    fetch.Site{},
 				},
-			}
+			}, nil
 		}
 	}
 
-	if state.Type == "Link" {
+	if prevState.Type == "Link" {
 		if action.Type == "Link: Next" {
 
 			// TODO
@@ -163,12 +190,12 @@ func Machine(state State, action Action) State {
 			return State{
 				Type: "Link",
 				State: &LinkState{
-					URL:     state.State.(*LinkState).URL,
+					URL:     prevState.State.(*LinkState).URL,
 					Links:   []fetch.Link{},
-					Page:    state.State.(*LinkState).Page + 1,
+					Page:    prevState.State.(*LinkState).Page + 1,
 					MaxPage: 1,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Link: Prev" {
@@ -178,12 +205,12 @@ func Machine(state State, action Action) State {
 			return State{
 				Type: "Link",
 				State: &LinkState{
-					URL:     state.State.(*LinkState).URL,
+					URL:     prevState.State.(*LinkState).URL,
 					Links:   []fetch.Link{},
-					Page:    state.State.(*LinkState).Page - 1,
+					Page:    prevState.State.(*LinkState).Page - 1,
 					MaxPage: 1,
 				},
-			}
+			}, nil
 		}
 
 		if action.Type == "Link: Choose" {
@@ -193,15 +220,15 @@ func Machine(state State, action Action) State {
 			return State{
 				Type: "Site",
 				State: &SiteState{
-					URL:      "",
-					Page:     1,
-					MaxPage:  1,
-					Text:     "",
-					FullText: "",
+					URL:     "",
+					Page:    1,
+					MaxPage: 1,
+					Text:    "",
+					Site:    fetch.Site{},
 				},
-			}
+			}, nil
 		}
 	}
 
-	return State{Type: "Null"}
+	return prevState, errors.New("ACTION:INVALID")
 }
