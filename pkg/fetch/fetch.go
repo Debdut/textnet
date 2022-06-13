@@ -1,46 +1,42 @@
 package fetch
 
 import (
-	"io"
-	"net/http"
+	"github.com/PuerkitoBio/goquery"
 )
-
-var BASE string = "http://frogfind.com/read.php?a="
-
-func Get(url string) (string, error) {
-	// frogFindURL := fmt.Sprintf(BASE, url)
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
-}
-
-// TODO
-func GetText(html string) string {
-	return ""
-}
 
 type Link struct {
 	Text string
 	URL  string
 }
 
-// TODO
-func GetLinks(html string) []Link {
-	return []Link{}
+func GetLinks(body *goquery.Selection) []Link {
+	var links []Link
+	as := body.Find("a")
+	as.Each(func(i int, a *goquery.Selection) {
+		link := Link{Text: a.Text()}
+		href, exists := a.Attr("href")
+		if exists {
+			link.URL = href
+			links = append(links, link)
+		}
+	})
+
+	return links
 }
 
-// TODO
-func GetImages(html string) []Link {
-	return []Link{}
+func GetImages(body *goquery.Selection) []Link {
+	var images []Link
+	imgs := body.Find("img")
+	imgs.Each(func(i int, img *goquery.Selection) {
+		image := Link{Text: img.Text()}
+		src, exists := img.Attr("src")
+		if exists {
+			image.URL = src
+			images = append(images, image)
+		}
+	})
+
+	return images
 }
 
 type Site struct {
@@ -50,18 +46,17 @@ type Site struct {
 	Images   []Link
 }
 
-// TODO
 func GetSite(url string) (Site, error) {
 	var site Site
-
-	html, err := Get(url)
+	document, err := goquery.NewDocument(url)
 	if err != nil {
 		return site, err
 	}
 
-	site.FullText = GetText(html)
-	site.Links = GetLinks(html)
-	site.Images = GetImages(html)
+	body := document.Find("body")
+	site.FullText = body.Text()
+	site.Links = GetLinks(body)
+	site.Images = GetImages(body)
 
 	return site, nil
 }
