@@ -178,7 +178,7 @@ func GetSearchLinksFromFrogFind(query string) ([]Link, error) {
 				link.Text = fmt.Sprintf(
 					"%s [%s]",
 					a.Find("b").Text(),
-					a.Find("font[size=\"2\"]").Text(),
+					link.URL,
 				)
 
 				links = append(links, link)
