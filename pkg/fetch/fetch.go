@@ -1,7 +1,15 @@
 package fetch
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
+	readability "github.com/go-shiori/go-readability"
 )
 
 type Link struct {
@@ -39,6 +47,43 @@ func GetImages(body *goquery.Selection) []Link {
 	return images
 }
 
+func getURL(path string) (*url.URL, error) {
+	url, err := url.ParseRequestURI(path)
+	if err != nil {
+		return url, err
+	}
+
+	if !strings.HasPrefix(url.Scheme, "http") {
+		return url, errors.New("non http/https url")
+	}
+
+	return url, err
+}
+
+func getArticleText(buf io.Reader, url *url.URL) (string, error) {
+	var text string
+	article, err := readability.FromReader(buf, url)
+	// couldn't read valid article from document
+	if err != nil {
+		return text, err
+	} else {
+		if article.Title != "" {
+			text = article.Title
+		}
+		if article.Byline != "" {
+			text += "\n\n" + article.Byline
+		}
+		if article.TextContent != "" {
+			text += "\n\n" + article.TextContent
+		}
+		if article.Excerpt != "" {
+			text += "\n\n" + article.Excerpt
+		}
+	}
+
+	return text, nil
+}
+
 type Site struct {
 	URL      string
 	FullText string
@@ -46,15 +91,40 @@ type Site struct {
 	Images   []Link
 }
 
-func GetSite(url string) (Site, error) {
+func GetSite(pageURL string) (Site, error) {
 	var site Site
-	document, err := goquery.NewDocument(url)
+	url, err := getURL(pageURL)
+	if err != nil {
+		return site, nil
+	}
+
+	// get request valiud url
+	res, err := http.Get(pageURL)
+	// couldn't get error
+	if err != nil {
+		return site, err
+	}
+
+	defer res.Body.Close()
+
+	// Use tee so the reader can be used twice
+	buf := bytes.NewBuffer(nil)
+	tee := io.TeeReader(res.Body, buf)
+
+	// create document reader like jquery
+	document, err := goquery.NewDocumentFromReader(tee)
 	if err != nil {
 		return site, err
 	}
 
 	body := document.Find("body")
-	site.FullText = body.Text()
+	article, err := getArticleText(buf, url)
+	if err != nil {
+		site.FullText = body.Text()
+	} else {
+		site.FullText = article
+	}
+
 	site.Links = GetLinks(body)
 	site.Images = GetImages(body)
 

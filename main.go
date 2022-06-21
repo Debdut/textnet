@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -14,10 +13,11 @@ func main() {
 		panic(err)
 	}
 
-	json, err := json.Marshal(site)
-	if err != nil {
-		panic(err)
-	}
+	// json, err := json.Marshal(site)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	fmt.Println(string(json))
+	// fmt.Println(string(json))
+	fmt.Println(site.FullText)
 }
