@@ -47,7 +47,7 @@ vet:  ## Run go vet against code.
 	
 ##@ Build
 
-build: fmt vet tidy ## Build manager binary.
+build: fmt vet lint tidy ## Build manager binary.
 	go build -o bin/textnet main.go
 
 run: fmt vet  ## Run a controller from your host.
