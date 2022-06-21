@@ -149,6 +149,7 @@ func GetSearchLinks(query string, page uint8) []Link {
 // search on google
 func GetSearchLinksFromGoole(query string, page uint8) ([]Link, error) {
 	var links []Link
+	// TODO: set proxy, page in options
 	results, err := google.Search(context.TODO(), query)
 	if err != nil {
 		return links, err
