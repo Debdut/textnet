@@ -2,11 +2,9 @@ package fetch
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	readability "github.com/go-shiori/go-readability"
@@ -47,20 +45,23 @@ func GetImages(body *goquery.Selection) []Link {
 	return images
 }
 
-func getURL(path string) (*url.URL, error) {
-	url, err := url.ParseRequestURI(path)
+// tries to fix url, returns same if ok
+func GetURL(path string) (string, *url.URL, error) {
+	URL, err := url.ParseRequestURI(path)
 	if err != nil {
-		return url, err
+		fixedPath := "https://" + path
+		URL, err = url.ParseRequestURI(fixedPath)
+		if err != nil {
+			return path, URL, err
+		}
+
+		return fixedPath, URL, nil
 	}
 
-	if !strings.HasPrefix(url.Scheme, "http") {
-		return url, errors.New("non http/https url")
-	}
-
-	return url, err
+	return path, URL, nil
 }
 
-func getArticleText(buf io.Reader, url *url.URL) (string, error) {
+func GetArticleText(buf io.Reader, url *url.URL) (string, error) {
 	var text string
 	article, err := readability.FromReader(buf, url)
 	// couldn't read valid article from document
@@ -93,13 +94,13 @@ type Site struct {
 
 func GetSite(pageURL string) (Site, error) {
 	var site Site
-	url, err := getURL(pageURL)
+	URLString, url, err := GetURL(pageURL)
 	if err != nil {
-		return site, nil
+		return site, err
 	}
 
 	// get request valiud url
-	res, err := http.Get(pageURL)
+	res, err := http.Get(URLString)
 	// couldn't get error
 	if err != nil {
 		return site, err
@@ -118,7 +119,7 @@ func GetSite(pageURL string) (Site, error) {
 	}
 
 	body := document.Find("body")
-	article, err := getArticleText(buf, url)
+	article, err := GetArticleText(buf, url)
 	if err != nil {
 		site.FullText = body.Text()
 	} else {
