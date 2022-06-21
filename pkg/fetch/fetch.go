@@ -2,9 +2,12 @@ package fetch
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	readability "github.com/go-shiori/go-readability"
@@ -132,7 +135,56 @@ func GetSite(pageURL string) (Site, error) {
 	return site, nil
 }
 
-// TODO
+// Search
 func GetSearchLinks(query string, page uint8) []Link {
-	return []Link{}
+	links, err := GetSearchLinksFromFrogFind(query)
+	if err != nil {
+		return []Link{}
+	}
+
+	return links
+}
+
+// search on frogfind
+func GetSearchLinksFromFrogFind(query string) ([]Link, error) {
+	var links []Link
+	space := regexp.MustCompile(`\s+`)
+	fixedQuery := space.ReplaceAllString(query, " ")
+	baseURL := "http://frogfind.com/?q="
+	searchURL := baseURL + url.QueryEscape(fixedQuery)
+
+	res, err := http.Get(searchURL)
+	if err != nil {
+		return links, err
+	}
+
+	defer res.Body.Close()
+
+	// create document reader like jquery
+	document, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return links, err
+	}
+
+	body := document.Find("body")
+	as := body.Find("a")
+	as.Each(func(i int, a *goquery.Selection) {
+		link := Link{}
+		href, exists := a.Attr("href")
+		if exists {
+			// check if a search result
+			if strings.HasPrefix(href, "/read.php?a=") {
+				link.URL = strings.Replace(href, "/read.php?a=", "", 1)
+				link.Text = fmt.Sprintf(
+					"%s [%s]",
+					a.Find("b").Text(),
+					a.Find("font[size=\"2\"]").Text(),
+				)
+
+				links = append(links, link)
+			}
+		}
+	})
+
+	return links, nil
 }

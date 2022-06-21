@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -8,16 +9,14 @@ import (
 )
 
 func main() {
-	site, err := fetch.GetSite(os.Args[1])
+	fmt.Println(os.Args[1])
+	links := fetch.GetSearchLinks(os.Args[1], 1)
+
+	json, err := json.Marshal(links)
 	if err != nil {
 		panic(err)
 	}
 
-	// json, err := json.Marshal(site)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// fmt.Println(string(json))
-	fmt.Println(site.FullText)
+	fmt.Println(string(json))
+	// fmt.Println()
 }

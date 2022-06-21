@@ -132,6 +132,7 @@ func Machine(prevState State, action Action) (State, error) {
 			// fetch search results
 			Page += 1
 			Links := fetch.GetSearchLinks(Query, Page)
+
 			if len(Links) == 0 {
 				return prevState, errors.New("SEARCH:END")
 			}
