@@ -2,7 +2,7 @@ package fetch
 
 import (
 	"bytes"
-	"fmt"
+	"context"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	readability "github.com/go-shiori/go-readability"
+	google "github.com/rocketlaunchr/google-search"
 )
 
 type Link struct {
@@ -145,6 +146,22 @@ func GetSearchLinks(query string, page uint8) []Link {
 	return links
 }
 
+// search on google
+func GetSearchLinksFromGoole(query string, page uint8) ([]Link, error) {
+	var links []Link
+	results, err := google.Search(context.TODO(), query)
+	if err != nil {
+		return links, err
+	}
+
+	for _, result := range results {
+		link := Link{URL: result.URL, Text: result.Title}
+		links = append(links, link)
+	}
+
+	return links, nil
+}
+
 // search on frogfind
 func GetSearchLinksFromFrogFind(query string) ([]Link, error) {
 	var links []Link
@@ -175,11 +192,7 @@ func GetSearchLinksFromFrogFind(query string) ([]Link, error) {
 			// check if a search result
 			if strings.HasPrefix(href, "/read.php?a=") {
 				link.URL = strings.Replace(href, "/read.php?a=", "", 1)
-				link.Text = fmt.Sprintf(
-					"%s [%s]",
-					a.Find("b").Text(),
-					link.URL,
-				)
+				link.Text = a.Find("b").Text()
 
 				links = append(links, link)
 			}
