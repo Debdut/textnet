@@ -5,8 +5,8 @@ var ActionTypes = []string{
 	"Site: Next",
 	"Site: Prev",
 	"Search: Send",
-	"Search: Next",
-	"Search: Prev",
+	// "Search: Next",
+	// "Search: Prev",
 	"Search: Choose",
 	"Link",
 	"Link: Next",
@@ -42,17 +42,17 @@ func (payload *SearchSendPayload) Type() string {
 	return "SearchSendPayload"
 }
 
-type SearchNextPayload struct{}
+// type SearchNextPayload struct{}
 
-func (payload *SearchNextPayload) Type() string {
-	return "SearchNextPayload"
-}
+// func (payload *SearchNextPayload) Type() string {
+// 	return "SearchNextPayload"
+// }
 
-type SearchPrevPayload struct{}
+// type SearchPrevPayload struct{}
 
-func (payload *SearchPrevPayload) Type() string {
-	return "SearchPrevPayload"
-}
+// func (payload *SearchPrevPayload) Type() string {
+// 	return "SearchPrevPayload"
+// }
 
 type SearchChoosePayload struct {
 	Query uint8

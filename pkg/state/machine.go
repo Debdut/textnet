@@ -123,48 +123,48 @@ func Machine(prevState State, action Action) (State, error) {
 
 	if prevState.Type == "Search" {
 		searchState := prevState.State.(*SearchState)
-		Query := searchState.Query
+		// Query := searchState.Query
 		Page := searchState.Page
 		Links := searchState.Links
 
-		if action.Type == "Search: Next" {
+		// if action.Type == "Search: Next" {
 
-			// fetch search results
-			Page += 1
-			Links := fetch.GetSearchLinks(Query, Page)
+		// 	// fetch search results
+		// 	Page += 1
+		// 	Links := fetch.GetSearchLinks(Query, Page)
 
-			if len(Links) == 0 {
-				return prevState, errors.New("SEARCH:END")
-			}
+		// 	if len(Links) == 0 {
+		// 		return prevState, errors.New("SEARCH:END")
+		// 	}
 
-			return State{
-				Type: "Search",
-				State: &SearchState{
-					Query: Query,
-					Links: Links,
-					Page:  Page,
-				},
-			}, nil
-		}
+		// 	return State{
+		// 		Type: "Search",
+		// 		State: &SearchState{
+		// 			Query: Query,
+		// 			Links: Links,
+		// 			Page:  Page,
+		// 		},
+		// 	}, nil
+		// }
 
-		if action.Type == "Search: Prev" {
+		// if action.Type == "Search: Prev" {
 
-			// TODO
-			if Page == 1 {
-				return prevState, errors.New("SEARCH:START")
-			}
-			Page -= 1
-			Links := fetch.GetSearchLinks(Query, Page)
+		// 	// TODO
+		// 	if Page == 1 {
+		// 		return prevState, errors.New("SEARCH:START")
+		// 	}
+		// 	Page -= 1
+		// 	Links := fetch.GetSearchLinks(Query, Page)
 
-			return State{
-				Type: "Search",
-				State: &SearchState{
-					Query: Query,
-					Links: Links,
-					Page:  Page,
-				},
-			}, nil
-		}
+		// 	return State{
+		// 		Type: "Search",
+		// 		State: &SearchState{
+		// 			Query: Query,
+		// 			Links: Links,
+		// 			Page:  Page,
+		// 		},
+		// 	}, nil
+		// }
 
 		if action.Type == "Search: Choose" {
 
