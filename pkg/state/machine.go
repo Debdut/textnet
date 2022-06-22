@@ -124,7 +124,7 @@ func Machine(prevState State, action Action) (State, error) {
 	if prevState.Type == "Search" {
 		searchState := prevState.State.(*SearchState)
 		// Query := searchState.Query
-		Page := searchState.Page
+		// Page := searchState.Page
 		Links := searchState.Links
 
 		// if action.Type == "Search: Next" {
@@ -170,11 +170,12 @@ func Machine(prevState State, action Action) (State, error) {
 
 			// TODO
 			Query := action.Payload.(*SearchChoosePayload).Query
-			if Query > 10 {
-				return prevState, errors.New("SEARCH:OUT_OF_BOUND")
-			}
+			// if Query > 10 {
+			// 	return prevState, errors.New("SEARCH:OUT_OF_BOUND")
+			// }
 
-			index := 10*(Page-1) + Query - 1
+			// index := 10*(Page-1) + Query - 1
+			index := Query - 1
 			URL := Links[index].URL
 			Site, err := fetch.GetSite(URL)
 			if err != nil {
