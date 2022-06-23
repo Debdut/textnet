@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/debdut/textnet/pkg/util"
 	readability "github.com/go-shiori/go-readability"
 	google "github.com/rocketlaunchr/google-search"
 )
@@ -49,22 +50,6 @@ func GetImages(body *goquery.Selection) []Link {
 	return images
 }
 
-// tries to fix url, returns same if ok
-func GetURL(path string) (string, *url.URL, error) {
-	URL, err := url.ParseRequestURI(path)
-	if err != nil {
-		fixedPath := "https://" + path
-		URL, err = url.ParseRequestURI(fixedPath)
-		if err != nil {
-			return path, URL, err
-		}
-
-		return fixedPath, URL, nil
-	}
-
-	return path, URL, nil
-}
-
 func GetArticleText(buf io.Reader, url *url.URL) (string, error) {
 	var text string
 	article, err := readability.FromReader(buf, url)
@@ -98,7 +83,7 @@ type Site struct {
 
 func GetSite(pageURL string) (Site, error) {
 	var site Site
-	URLString, url, err := GetURL(pageURL)
+	URLString, url, err := util.GetURL(pageURL)
 	if err != nil {
 		return site, err
 	}

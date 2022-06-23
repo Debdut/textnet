@@ -1,25 +1,21 @@
 package util
 
 import (
-	"github.com/debdut/textnet/pkg/fetch"
+	"net/url"
 )
 
-// TODO
-func GetSiteMaxPages(text string) uint8 {
-	return 1
-}
+// tries to fix url, returns same if ok
+func GetURL(path string) (string, *url.URL, error) {
+	URL, err := url.ParseRequestURI(path)
+	if err != nil {
+		fixedPath := "https://" + path
+		URL, err = url.ParseRequestURI(fixedPath)
+		if err != nil {
+			return path, URL, err
+		}
 
-// TODO
-func GetSitePage(text string, page uint8) string {
-	return ""
-}
+		return fixedPath, URL, nil
+	}
 
-// TODO
-func GetLinkMaxPages(links []fetch.Link) uint8 {
-	return 10
-}
-
-// TODO
-func GetLinkPage(links []fetch.Link, page uint8) []fetch.Link {
-	return []fetch.Link{}
+	return path, URL, nil
 }
