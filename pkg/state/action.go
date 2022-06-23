@@ -96,7 +96,9 @@ func (payload *LinkChoosePayload) Type() string {
 	return "LinkChoosePayload"
 }
 
-type Unknown struct{}
+type Unknown struct {
+	Message string
+}
 
 func (payload *Unknown) Type() string {
 	return "Unknown"
@@ -167,24 +169,30 @@ func IdentifyAction(state State, message string) Action {
 	}
 
 	if index, err := strconv.Atoi(message); err == nil {
-		query := uint8(index)
+		if index >= 0 && index < 256 {
+			query := uint8(index)
 
-		if state.Type == "Link" {
-			action.Type = "Link: Choose"
-			action.Payload = &LinkChoosePayload{
-				Query: query,
+			if state.Type == "Link" {
+				action.Type = "Link: Choose"
+				action.Payload = &LinkChoosePayload{
+					Query: query,
+				}
+
+				return action
 			}
 
-			return action
+			if state.Type == "Search" {
+				action.Type = "Search: Choose"
+				action.Payload = &SearchChoosePayload{
+					Query: query,
+				}
+
+				return action
+			}
 		}
 
-		if state.Type == "Search" {
-			action.Type = "Search: Choose"
-			action.Payload = &SearchChoosePayload{
-				Query: query,
-			}
-
-			return action
+		action.Payload = &Unknown{
+			Message: "index not in range",
 		}
 	}
 
