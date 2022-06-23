@@ -4,10 +4,34 @@ import (
 	"errors"
 
 	"github.com/debdut/textnet/pkg/fetch"
-	"github.com/debdut/textnet/pkg/util"
 )
 
+// TODO
+func GetSiteMaxPages(text string) uint8 {
+	return 1
+}
+
+// TODO
+func GetSitePage(text string, page uint8) string {
+	return ""
+}
+
+// TODO
+func GetLinkMaxPages(links []fetch.Link) uint8 {
+	return 10
+}
+
+// TODO
+func GetLinkPage(links []fetch.Link, page uint8) []fetch.Link {
+	return []fetch.Link{}
+}
+
 func Machine(prevState State, action Action) (State, error) {
+
+	if action.Type == "Unknown" {
+		return prevState, errors.New("ACTION:INVALID")
+	}
+
 	if action.Type == "Site: Send" {
 
 		// fetch site text, compute max pages
@@ -17,9 +41,9 @@ func Machine(prevState State, action Action) (State, error) {
 			return prevState, err
 		}
 
-		MaxPage := util.GetSiteMaxPages(Site.FullText)
+		MaxPage := GetSiteMaxPages(Site.FullText)
 		var Page uint8 = 1
-		Text := util.GetSitePage(Site.FullText, Page)
+		Text := GetSitePage(Site.FullText, Page)
 
 		return State{
 			Type: "Site",
@@ -66,7 +90,7 @@ func Machine(prevState State, action Action) (State, error) {
 				return prevState, errors.New("SITE:END")
 			}
 
-			Text := util.GetSitePage(Site.FullText, Page)
+			Text := GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
@@ -89,7 +113,7 @@ func Machine(prevState State, action Action) (State, error) {
 				return prevState, errors.New("SITE:START")
 			}
 
-			Text := util.GetSitePage(Site.FullText, Page)
+			Text := GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
@@ -107,7 +131,7 @@ func Machine(prevState State, action Action) (State, error) {
 
 			// get all links from page
 			Links := Site.Links
-			MaxPage := util.GetLinkMaxPages(Links)
+			MaxPage := GetLinkMaxPages(Links)
 
 			return State{
 				Type: "Link",
@@ -182,9 +206,9 @@ func Machine(prevState State, action Action) (State, error) {
 				return prevState, err
 			}
 
-			MaxPage := util.GetSiteMaxPages(Site.FullText)
+			MaxPage := GetSiteMaxPages(Site.FullText)
 			var Page uint8 = 1
-			Text := util.GetSitePage(Site.FullText, Page)
+			Text := GetSitePage(Site.FullText, Page)
 
 			return State{
 				Type: "Site",
